@@ -73,7 +73,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnLoginCookie.setOnClickListener {
-            val intent = Intent(this, LoginWebViewActivity::class.java)
+            // Launch Native QR Code Login Activity (no WebView required, with web fallback)
+            val intent = Intent(this, QrCodeLoginActivity::class.java)
             loginCookieLauncher.launch(intent)
         }
 

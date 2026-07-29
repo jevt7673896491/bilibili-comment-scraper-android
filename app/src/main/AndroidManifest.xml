@@ -33,9 +33,15 @@
         </activity>
 
         <activity
+            android:name=".QrCodeLoginActivity"
+            android:exported="false"
+            android:label="B站原生扫码登录"
+            android:configChanges="orientation|screenSize" />
+
+        <activity
             android:name=".LoginWebViewActivity"
             android:exported="false"
-            android:label="B站快捷登录"
+            android:label="B站网页端登录"
             android:configChanges="orientation|screenSize" />
 
         <provider

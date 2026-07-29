@@ -1,8 +1,8 @@
 # B站评论爬取工具 (Android Native App)
 
-本项目是开源项目 [bilibili_comment_scraper_webui](https://github.com/ManiaAmaeOvo/bilibili_comment_scraper_webui) 的**完整 Android 原生客户端重构版本**（100% Kotlin + Modern Android XML + OkHttp + Coroutines）。
+本项目是开源项目 [bilibili_comment_scraper_webui](https://github.com/ManiaAmaeOvo/bilibili_comment_scraper_webui) 的**完整 Android 原生客户端重构版本**（100% Kotlin + Modern Android XML + OkHttp + Coroutines + ZXing 原生二维码）。
 
-本项目在移动端实现了原版 WebUI + Python Backend 的全部特性，包括**突破API 5000条上限的双重排序策略**、**二级楼中楼回复深度爬取**、**内置浏览器快速登录提取 Cookie**、**防风控随机延时**以及**标准 UTF-8 (BOM) CSV 电子表格自动导出**等核心功能。
+本项目在移动端实现了原版 WebUI + Python Backend 的全部特性，同时针对移动端 WebView 扫码兼容性痛点，完成了**官方登录接口无 WebView 原生扫码授权**的深度重构与升级！
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 功能模块 | 原版 WebUI (FastAPI + Playwright) | Android 原生 App 升级实现 (100% Kotlin) |
 | :--- | :--- | :--- |
-| **一键登录抓取 Cookie** | Playwright 打开桌面端浏览器由用户扫码登录获取 Cookie | **内置 WebView 登录模块 (`LoginWebViewActivity`)**，可在应用内直接加载 B 站登录界面，成功登录后一键保存提取 Cookie 注入爬取配置 |
+| **【全新升级】原生官方扫码登录** | Playwright 打开桌面浏览器扫码，需占用系统浏览器并扫描 | **基于官方登录 API 的免 WebView 原生扫码 (`QrCodeLoginActivity`)**：直接调用官方 `qrcode/generate` 接口通过 Google **ZXing** 实时生成登录二维码 Bitmap，并轮询 `/qrcode/poll`，成功状态 (`code=0`) 下直接解析 `Set-Cookie` 响应头提取 `SESSDATA`、`bili_jct`；彻底解决移动端 WebView 扫码没反应、Cookie 拦截问题；并保留网页验证码登录作为备用通道 |
 | **突破 API 5000 条上限** | 采用双重排序策略（先按【时间】，再按【热度】），并在本地内存去重 | **支持双重排序爬取（时间排序 mode=2 + 热度排序 mode=3）**，利用 `HashSet<Long>` 自动去重评论 ID，轻松抓取突破 5000 条甚至万级数据 |
 | **楼中楼二级回复抓取** | 根据 `rcount > 0` 对主评论发起并发查询请求 | 自动筛选主评论中的楼中楼回复数量，递归分页抽取全部二级回复，关联子评论的父级 ID，保证会话层级明确 |
 | **防风控与真人行为模拟** | 集成随机停顿与分块请求 | 所有分页查询和楼中楼网络请求均内置 `Random.nextLong()` 随机化延时，有效减缓高频率并发带来的风控封禁风险 |
@@ -30,15 +30,17 @@ BiliCommentScraperAndroid/
 ├── README.md                                 # 项目文档说明
 ├── .github/workflows/build.yml               # GitHub Actions 自动化 APK 编译发布脚本
 └── app/
-    ├── build.gradle                          # 核心依赖 (OkHttp3, Gson, Coroutines, ViewBinding, DocumentFile)
+    ├── build.gradle                          # 核心依赖 (OkHttp3, Gson, Coroutines, ViewBinding, ZXing)
     ├── proguard-rules.pro                    # B站 API 数据类混淆规则
     └── src/
         └── main/
             ├── AndroidManifest.xml           # 权限声明及 Activity/FileProvider 注册
             ├── java/com/biliscraper/android/
             │   ├── MainActivity.kt           # 主控制面板与配置交互
-            │   ├── LoginWebViewActivity.kt   # 应用内 B 站登录与 Cookie 抓取
+            │   ├── QrCodeLoginActivity.kt    # 【核心升级】官方接口无 WebView 原生二维码扫码登录
+            │   ├── LoginWebViewActivity.kt   # 备用网页验证码/账密登录通道
             │   ├── api/
+            │   │   ├── BiliLoginApiService.kt # 官方二维码申请 /qrcode/generate 与轮询 /qrcode/poll
             │   │   ├── BiliVideoApiService.kt # B站视频基础信息、主评论与楼中楼客户端
             │   │   └── CommentModels.kt      # 评论数据模型与 CSV 列转换
             │   ├── utils/
@@ -48,7 +50,7 @@ BiliCommentScraperAndroid/
             │       └── ScraperViewModel.kt   # 双重排序策略、防风控延时与协程任务管理
             └── res/
                 ├── drawable/                 # 自定义圆角卡片及深色控制台背景
-                ├── layout/                   # 原生主布局及 WebView 登录布局
+                ├── layout/                   # 原生主布局、原生扫码布局及网页登录布局
                 ├── mipmap-*/ic_launcher.png  # B站专属粉底应用图标
                 └── values/                   # 颜色方案 (粉/底)、文本及主题字串
 ```
