@@ -39,6 +39,9 @@ class BiliVideoApiService {
         }
     }
 
+    /**
+     * Engine 1: Standard Cursor API (/x/v2/reply/main)
+     */
     @Throws(IOException::class)
     fun getMainComments(aid: Long, mode: Int, nextOffset: Long, cookie: String? = null): BiliReplyMainResponse {
         val url = "https://api.bilibili.com/x/v2/reply/main?oid=$aid&type=1&mode=$mode&next=$nextOffset&ps=20"
@@ -59,6 +62,43 @@ class BiliVideoApiService {
         }
     }
 
+    /**
+     * Engine 2: WBI Signed Modern API (/x/v2/reply/wbi/main)
+     * Automatically signs parameters with WBI w_rid and wts to bypass -403 / -352 rate limits.
+     */
+    @Throws(IOException::class)
+    fun getWbiMainComments(aid: Long, mode: Int, nextOffset: Long, cookie: String? = null): BiliReplyMainResponse {
+        val baseParams = mapOf(
+            "oid" to aid,
+            "type" to 1,
+            "mode" to mode,
+            "next" to nextOffset,
+            "ps" to 20
+        )
+        val signed = WbiSigner.signParams(baseParams, cookie)
+        val queryStr = signed.entries.joinToString("&") { "${it.key}=${it.value}" }
+        val url = "https://api.bilibili.com/x/v2/reply/wbi/main?$queryStr"
+
+        val builder = Request.Builder()
+            .url(url)
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+            .header("Referer", "https://www.bilibili.com/")
+        if (!cookie.isNullOrBlank()) {
+            builder.header("Cookie", cookie)
+        }
+
+        client.newCall(builder.build()).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("WBI接口 HTTP 异常: ${response.code}")
+            }
+            val body = response.body?.string() ?: throw IOException("WBI数据包为空")
+            return gson.fromJson(body, BiliReplyMainResponse::class.java)
+        }
+    }
+
+    /**
+     * Sub-comment Engine: (/x/v2/reply/reply)
+     */
     @Throws(IOException::class)
     fun getSubComments(aid: Long, rootRpid: Long, page: Int, cookie: String? = null): BiliSubReplyResponse {
         val url = "https://api.bilibili.com/x/v2/reply/reply?oid=$aid&type=1&root=$rootRpid&pn=$page&ps=20"

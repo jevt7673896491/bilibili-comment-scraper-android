@@ -1,19 +1,18 @@
 # B站评论爬取工具 (Android Native App)
 
-本项目是开源项目 [bilibili_comment_scraper_webui](https://github.com/ManiaAmaeOvo/bilibili_comment_scraper_webui) 的**完整 Android 原生客户端重构版本**（100% Kotlin + Modern Android XML + OkHttp + Coroutines + ZXing 原生二维码）。
+本项目是开源项目 [bilibili_comment_scraper_webui](https://github.com/ManiaAmaeOvo/bilibili_comment_scraper_webui) 的**完整 Android 原生客户端重构与深度架构升级版本**（100% Kotlin + Modern Android XML + OkHttp + Coroutines + ZXing 原生二维码 + **多引擎联合集成爬虫架构**）。
 
-本项目在移动端实现了原版 WebUI + Python Backend 的全部特性，同时针对移动端 WebView 扫码兼容性痛点，完成了**官方登录接口无 WebView 原生扫码授权**的深度重构与升级！
+本项目不仅解决了移动端 WebView 扫码没反应的痛点，更整合了全网各种已知主流 B站评论爬取方案，打造了**全网集成的多引擎互补抓取体系**，最大限度突破 B 站 API 单套路接口 5000 条的分页限制与风控封锁！
 
 ---
 
-## ✨ 核心特性与功能对照
+## ✨ 核心特性与架构对比
 
-| 功能模块 | 原版 WebUI (FastAPI + Playwright) | Android 原生 App 升级实现 (100% Kotlin) |
+| 功能模块 | 原版 WebUI (FastAPI + Playwright) | Android 原生 App 深度升级实现 (100% Kotlin) |
 | :--- | :--- | :--- |
-| **【全新升级】原生官方扫码登录** | Playwright 打开桌面浏览器扫码，需占用系统浏览器并扫描 | **基于官方登录 API 的免 WebView 原生扫码 (`QrCodeLoginActivity`)**：直接调用官方 `qrcode/generate` 接口通过 Google **ZXing** 实时生成登录二维码 Bitmap，并轮询 `/qrcode/poll`，成功状态 (`code=0`) 下直接解析 `Set-Cookie` 响应头提取 `SESSDATA`、`bili_jct`；彻底解决移动端 WebView 扫码没反应、Cookie 拦截问题；并保留网页验证码登录作为备用通道 |
-| **突破 API 5000 条上限** | 采用双重排序策略（先按【时间】，再按【热度】），并在本地内存去重 | **支持双重排序爬取（时间排序 mode=2 + 热度排序 mode=3）**，利用 `HashSet<Long>` 自动去重评论 ID，轻松抓取突破 5000 条甚至万级数据 |
-| **楼中楼二级回复抓取** | 根据 `rcount > 0` 对主评论发起并发查询请求 | 自动筛选主评论中的楼中楼回复数量，递归分页抽取全部二级回复，关联子评论的父级 ID，保证会话层级明确 |
-| **防风控与真人行为模拟** | 集成随机停顿与分块请求 | 所有分页查询和楼中楼网络请求均内置 `Random.nextLong()` 随机化延时，有效减缓高频率并发带来的风控封禁风险 |
+| **【全新架构】多引擎联合集成爬取** | 仅使用单套路 `bilibili-api` 封装执行排序请求 | **全网采集方案集成的多引擎协作架构 (`ScraperViewModel`)**：<br>1. **引擎一 (标准 Cursor 游标引擎)**：调用 `/x/v2/reply/main` 接口分别对【时间最新 (`mode=2`)】和【热度推荐 (`mode=3`)】执行双维度抓取；<br>2. **引擎二 (WBI 签名加密引擎)**：自研官方完整 WBI 签名算法 (`WbiSigner.kt`)，调用带签名校验的现代主站接口 `/x/v2/reply/wbi/main`，突破无鉴权状态下的 `-403`/`-352` 封锁与限流，将引擎一被拦截或漏抓的评论全部抓回！<br>3. **深度楼中楼引擎**：对前两套引擎捕获的全部主评论中 `rcount > 0` 的项进行递归展开，联合采集并本地 `HashSet<Long>` 一键去重！ |
+| **【独家功能】原生官方扫码登录** | Playwright 打开桌面浏览器扫码，依赖笨重的桌面内核 | **基于官方登录 API 的免 WebView 原生扫码 (`QrCodeLoginActivity`)**：直接调取官方 `/qrcode/generate` 接口利用 **ZXing** 在手机屏幕原生绘制 `600×600` 二维码图标，并后台轮询 `/qrcode/poll` 状态；一旦成功 (`code=0`) 直接从 `Set-Cookie` 响应头解析提取 `SESSDATA`、`bili_jct` 一键保存；并保留网页验证码登录作为备用通道 |
+| **防风控与真人行为模拟** | 集成随机停顿与分块请求 | 所有多引擎分页查询和楼中楼网络请求均内置 `Random.nextLong()` 随机化延时，有效打破机器人固定频率特征 |
 | **任务中断与状态收集** | 基于 `asyncio.Event` 触发 SSE 实时日志与停止指令 | **基于 `ViewModel` 状态收集与协程响应**，支持实时滚动显示深色终端控制台日志；可在任务途中随时点“中止任务”安全收尾保存已抓取的评论 |
 | **CSV 导出与兼容性** | Python `csv.DictWriter` 输出并支持前端网页直接下载 | **自研 CSV 引擎 (`CsvWriter.kt`)**，自动写入 **UTF-8 BOM (`\uFEFF`)** 标识头，使导出的 CSV 在 Excel / WPS 中完美无乱码展开；同时支持 SAF 目录选择及调用系统 API 分享文件 |
 
@@ -37,17 +36,18 @@ BiliCommentScraperAndroid/
             ├── AndroidManifest.xml           # 权限声明及 Activity/FileProvider 注册
             ├── java/com/biliscraper/android/
             │   ├── MainActivity.kt           # 主控制面板与配置交互
-            │   ├── QrCodeLoginActivity.kt    # 【核心升级】官方接口无 WebView 原生二维码扫码登录
+            │   ├── QrCodeLoginActivity.kt    # 官方接口无 WebView 原生二维码扫码登录
             │   ├── LoginWebViewActivity.kt   # 备用网页验证码/账密登录通道
             │   ├── api/
+            │   │   ├── WbiSigner.kt          # 【集成引擎】自研全套 Bilibili WBI 签名算法 (w_rid + wts 计算)
             │   │   ├── BiliLoginApiService.kt # 官方二维码申请 /qrcode/generate 与轮询 /qrcode/poll
-            │   │   ├── BiliVideoApiService.kt # B站视频基础信息、主评论与楼中楼客户端
+            │   │   ├── BiliVideoApiService.kt # 包含标准 Cursor、WBI 签名、楼中楼的三重 API 客户端
             │   │   └── CommentModels.kt      # 评论数据模型与 CSV 列转换
             │   ├── utils/
             │   │   ├── CsvWriter.kt          # UTF-8 BOM CSV 数据表写入工具
             │   │   └── FileUtil.kt           # SAF 目录授权与 Intent 分享管理
             │   └── viewmodel/
-            │       └── ScraperViewModel.kt   # 双重排序策略、防风控延时与协程任务管理
+            │       └── ScraperViewModel.kt   # 【核心架构】多引擎联合采集调度器、防风控延时与协程任务管理
             └── res/
                 ├── drawable/                 # 自定义圆角卡片及深色控制台背景
                 ├── layout/                   # 原生主布局、原生扫码布局及网页登录布局
