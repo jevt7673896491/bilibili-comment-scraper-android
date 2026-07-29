@@ -73,7 +73,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnLoginCookie.setOnClickListener {
-            // Launch Native QR Code Login Activity (no WebView required, with web fallback)
             val intent = Intent(this, QrCodeLoginActivity::class.java)
             loginCookieLauncher.launch(intent)
         }
@@ -161,5 +160,11 @@ class MainActivity : AppCompatActivity() {
                 .putString("saved_cookie", cookie)
                 .apply()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Emergency save hook if task is interrupted when app goes to background or is killed
+        viewModel.triggerEmergencySaveOnExit()
     }
 }
