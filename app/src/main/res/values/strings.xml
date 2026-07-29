@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">B站评论爬取工具</string>
+    <string name="app_subtitle">突破API翻页上限 · 楼中楼提取 · 自动化防风控</string>
+    <string name="label_bvid">目标视频 BV 号：</string>
+    <string name="hint_bvid">例如：BV1BK411L7DJ</string>
+    <string name="label_cookie">B站登录 Cookie（粘贴或直接登录抓取）：</string>
+    <string name="hint_cookie">SESSDATA=...; bili_jct=...; DedeUserID=...</string>
+    <string name="btn_login_cookie">登录B站自动获取 Cookie</string>
+    <string name="checkbox_sub_comments">深度爬取二级回复 (楼中楼)</string>
+    <string name="checkbox_dual_order">双重排序突破5000条上限 (时间+热度去重)</string>
+    <string name="btn_start">开始爬取</string>
+    <string name="btn_stop">中止任务</string>
+    <string name="btn_select_folder">更换目录</string>
+    <string name="btn_open_folder">打开保存位置</string>
+    <string name="btn_share">分享 CSV 文件</string>
+    <string name="status_ready">准备就绪 - 请输入或选择参数</string>
+    <string name="current_folder_label">保存目录: Documents/BiliCommentScraper</string>
+</resources>

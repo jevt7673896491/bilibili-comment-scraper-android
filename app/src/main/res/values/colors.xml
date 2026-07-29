@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FB7299</color>
+    <color name="purple_700">#E06287</color>
+    <color name="teal_200">#00A1D6</color>
+    <color name="teal_700">#0087B4</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="bg_color">#F7F8FA</color>
+    <color name="primary_pink">#FB7299</color>
+    <color name="primary_blue">#00A1D6</color>
+    <color name="text_color_dark">#222222</color>
+    <color name="text_color_grey">#666666</color>
+    <color name="log_bg_color">#282A36</color>      <!-- 暗色终端背景 -->
+    <color name="log_text_color">#50FA7B</color>    <!-- 绿终端字 -->
+    <color name="border_color">#E0E0E0</color>
+</resources>
